@@ -15,17 +15,25 @@ router.get('/', function (req, res, next) {
   // request userを取得
   // userName = req.user.username;
   // ﾜﾝﾀｲﾑﾄｰｸﾝ作成
-  var oneTimeToken = crypto.randomBytes(8).toString('hex');
+  // var oneTimeToken = crypto.randomBytes(8).toString('hex');
   // oneTimeTokenMap.set(userName, oneTimeToken);
   // tracking_idを作成
-  cookies = new Cookies(req, res);
+  const cookies = new Cookies(req, res);
+  addTrackingCookie(cookies);
   // trackingId = addTrackingCookie(cookies, userName);
+  console.info(
+      `閲覧されました: user: ${req.user}, ` +
+      `trackingId: ${cookies.get(trackingIdKey) },` +
+      `remoteAddress: ${req.connection.remoteAddress} `
+  );
+  /**
   console.info(
     `
     remoteAddress: ${req.connection.remoteAddress}, 
     oneTimeToken: ${oneTimeToken}
     `
   );
+   */
   // DBから情報を取得
   Post.findAll().then((posts) => {
     res.render('index', {
@@ -37,6 +45,26 @@ router.get('/', function (req, res, next) {
   });
 });
 
+// ----- いろいろ変更中 -----
+router.post('/', (req, res) => {
+  Post.create({
+    content: req.body.content,
+    trackingCookie: cookies.get(trackingIdKey),
+    postedBy: userName
+  }).then(() => {
+    console.info(`
+      投稿されました。
+      content: ${req.body.content}, 
+      trackingCookie: ${trackingId}, 
+      postedBy: ${userName} 
+      requestedOneTimeToken: ${requestedOneTimeToken}
+    `);
+    oneTimeTokenMap.delete(requestedUserName);
+    res.redirect('/post');
+  });
+ });
+
+/** ----- 変更前 -----
 router.post('/', (req, res) => {
   var requestedOneTimeToken = req.body.oneTimeToken;
   var requestedUserName = req.user.username;
@@ -60,7 +88,8 @@ router.post('/', (req, res) => {
     res.end('Error');
   }
  });
-
+ */
+ 
  /**
  * req Cookieにtracking_idがない場合作成する
  * @param {Cookies} cookies 
@@ -82,6 +111,17 @@ function addTrackingCookie(cookies, userName) {
   }
 }
 
+// -------------------------------- //
+function addTrackingCookie(cookies) {
+  if (!cookies.get(trackingIdKey)) {
+    const trackingId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+    const tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24));
+    cookies.set(trackingIdKey, trackingId, { expires: tomorrow });
+  }
+}
+// -------------------------------- //
+
+// -------------------------------- //
 /**
  * tracking_idの有無およびﾊｯｼｭ値の成否を判定する
  * @param {String} trackingId
@@ -114,5 +154,6 @@ function createValidHash(originalId, userName) {
   sha1sum.update(String(originalId) + userName + secretKey);
   return sha1sum.digest('hex');
 }
+// -------------------------------- //
 
 module.exports = router;
