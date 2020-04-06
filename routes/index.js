@@ -12,22 +12,22 @@ const oneTimeTokenMap = new Map();
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-  // request userを取得
-  // userName = req.user.username;
   // ﾜﾝﾀｲﾑﾄｰｸﾝ作成
   // var oneTimeToken = crypto.randomBytes(8).toString('hex');
   // oneTimeTokenMap.set(userName, oneTimeToken);
   
-  // tracking_idを作成
-  // ----- login済み(req.userがあるとき)Cookieを付ける? ----- //
-  const cookies = new Cookies(req, res);
-  addTrackingCookie(cookies);
-  // trackingId = addTrackingCookie(cookies, userName);
-  console.info(
-      `閲覧されました: user: ${req.user}, ` +
-      `trackingId: ${cookies.get(trackingIdKey) },` +
+  
+  // login済みのときtracking_idをｾｯﾄする  
+  if(req.user){
+    const userName = req.user.username;
+    const cookies = new Cookies(req, res);
+    const trackingId = addTrackingCookie(cookies, userName);
+    console.info(
+      `閲覧されました: user: ${userName}, ` +
+      `trackingId: ${trackingId},` +
       `remoteAddress: ${req.connection.remoteAddress} `
-  );
+    );
+  }
   // DBから情報を取得
   Post.findAll().then((posts) => {
     res.render('index', {
@@ -84,46 +84,23 @@ router.post('/', (req, res) => {
  });
  */
  
- /**
- * req Cookieにtracking_idがない場合作成する
- * @param {Cookies} cookies 
- * @param {String} userName
- * @return {String} trackingId
- */
+// Cookieにtracking_idがない場合作成しセットする関数です
 function addTrackingCookie(cookies, userName) {
   const requestedTrackingId = cookies.get(trackingIdKey);
-  // trackingIdが存在し&&IDとﾊｯｼｭ値が合致する場合
+  // trackingIdが存在する && IDとﾊｯｼｭ値が合致する場合
   if (isValidTrackingId(requestedTrackingId, userName)) {
     return requestedTrackingId;
-    // trackingIdが存在しない、あるいは合致しない場合
+    // trackingIdが存在しない or 合致しない場合
   } else {
     var originalTrackingId = parseInt(crypto.randomBytes(8).toString('hex'), 16);
-    var trackingId = `${originalTrackingId}_${createValidHash(originalTrackingId)}`;
+    var trackingId = `${originalTrackingId}_${createValidHash(originalTrackingId, userName)}`;
     var tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24));
     cookies.set(trackingIdKey, trackingId, { expires: tomorrow });
     return trackingId;
   }
 }
 
-// --- テスト用 --- //
-function addTrackingCookie(cookies) {
-  if (!cookies.get(trackingIdKey)) {
-    const trackingId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-    const tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24));
-    cookies.set(trackingIdKey, trackingId, { expires: tomorrow });
-  }
-}
-// -------------------------------- //
-
-// -------------------------------- //
-/**
- * tracking_idの有無およびﾊｯｼｭ値の成否を判定する
- * @param {String} trackingId
- * @param {String} req.user
- * @return {Boolean} false: trackingIdがない
- * @return {Boolean} false: ﾊｯｼｭ[ID + req.user]!=ﾊｯｼｭ値のとき
- * @return {Boolean} true: ﾊｯｼｭ[ID + req.user]==ﾊｯｼｭ値のとき
- */
+// tracking_idの有無とﾊｯｼｭ値の成否を判定する
 function isValidTrackingId(trackingId, userName) {
   if (!trackingId) {
     return false;
@@ -133,21 +110,16 @@ function isValidTrackingId(trackingId, userName) {
   // ｵﾘｼﾞﾅﾙID
   const originalId = splitted[0];
   // ﾊｯｼｭ値
-  const requestedHach = splitted[1];
-  return createValidHash(originalId, userName) === requestedHach;
+  const requestedHash = splitted[1];
+  return createValidHash(originalId, userName) === requestedHash;
 }
 
-/**
- * IDとreq.userからﾊｯｼｭを作成しﾘﾀｰﾝする
- * @param {String} originalId
- * @param {String} userName: req.user
- * @return {String} ﾊｯｼｭ[ID + userName]
- */
+// IDとreq.userからﾊｯｼｭを作成しﾘﾀｰﾝする
 function createValidHash(originalId, userName) {
   const sha1sum = crypto.createHash('sha1');
-  sha1sum.update(String(originalId) + userName + secretKey);
+  // sha1sum.update(String(originalId) + userName + secretKey);
+  sha1sum.update(String(originalId) + userName);
   return sha1sum.digest('hex');
 }
-// -------------------------------- //
 
 module.exports = router;
