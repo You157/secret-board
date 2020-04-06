@@ -17,7 +17,9 @@ router.get('/', function (req, res, next) {
   // ﾜﾝﾀｲﾑﾄｰｸﾝ作成
   // var oneTimeToken = crypto.randomBytes(8).toString('hex');
   // oneTimeTokenMap.set(userName, oneTimeToken);
+  
   // tracking_idを作成
+  // ----- login済み(req.userがあるとき)Cookieを付ける? ----- //
   const cookies = new Cookies(req, res);
   addTrackingCookie(cookies);
   // trackingId = addTrackingCookie(cookies, userName);
@@ -26,14 +28,6 @@ router.get('/', function (req, res, next) {
       `trackingId: ${cookies.get(trackingIdKey) },` +
       `remoteAddress: ${req.connection.remoteAddress} `
   );
-  /**
-  console.info(
-    `
-    remoteAddress: ${req.connection.remoteAddress}, 
-    oneTimeToken: ${oneTimeToken}
-    `
-  );
-   */
   // DBから情報を取得
   Post.findAll().then((posts) => {
     res.render('index', {
@@ -45,7 +39,7 @@ router.get('/', function (req, res, next) {
   });
 });
 
-// ----- いろいろ変更中 -----
+// ----- いろいろ変更中 ----- //
 router.post('/', (req, res) => {
   Post.create({
     content: req.body.content,
@@ -111,7 +105,7 @@ function addTrackingCookie(cookies, userName) {
   }
 }
 
-// -------------------------------- //
+// --- テスト用 --- //
 function addTrackingCookie(cookies) {
   if (!cookies.get(trackingIdKey)) {
     const trackingId = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
