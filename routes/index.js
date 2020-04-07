@@ -7,25 +7,24 @@ const Cookies = require('cookies');
 const trackingIdKey = 'tracking_id';
 // ハッシュ関数を利用するためのモジュール
 const crypto = require('crypto');
-// Key(ﾕｰｻﾞ名)：Value(ﾄｰｸﾝ)
+// Key(ﾕｰｻﾞ名)：Value(ﾄｰｸﾝ)とした連想配列
 const oneTimeTokenMap = new Map();
 
 /* GET home page. */
-router.get('/', function (req, res, next) {
-  // ﾜﾝﾀｲﾑﾄｰｸﾝ作成
-  // var oneTimeToken = crypto.randomBytes(8).toString('hex');
-  // oneTimeTokenMap.set(userName, oneTimeToken);
-  
-  
-  // login済みのときtracking_idをｾｯﾄする  
+router.get('/', function (req, res, next) {  
   if(req.user){
+    // login済みのときtracking_idをｾｯﾄする  
     const userName = req.user.username;
     const cookies = new Cookies(req, res);
     const trackingId = addTrackingCookie(cookies, userName);
+    // ﾜﾝﾀｲﾑﾄｰｸﾝ作成
+    var oneTimeToken = crypto.randomBytes(8).toString('hex');
+    oneTimeTokenMap.set(userName, oneTimeToken);
     console.info(
       `閲覧されました: user: ${userName}, ` +
       `trackingId: ${trackingId},` +
-      `remoteAddress: ${req.connection.remoteAddress} `
+      `remoteAddress: ${req.connection.remoteAddress} ` +
+      `oneTimeToken: ${oneTimeToken}`
     );
   }
   // DBから情報を取得
@@ -34,7 +33,7 @@ router.get('/', function (req, res, next) {
       title: 'Express', 
       user: req.user,
       posts: posts,
-      // oneTimeToken: oneTimeToken
+      oneTimeToken: oneTimeToken
     });
   });
 });
