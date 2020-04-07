@@ -9,28 +9,37 @@ const trackingIdKey = 'tracking_id';
 const crypto = require('crypto');
 // Key(ﾕｰｻﾞ名)：Value(ﾄｰｸﾝ)とした連想配列
 const oneTimeTokenMap = new Map();
+// 投稿Dateを見やすく編集する関数
+const moment = require('moment-timezone');
 
 /* GET home page. */
-router.get('/', function (req, res, next) {  
-  if(req.user){
+router.get('/', function (req, res, next) {
+  if (req.user) {
     // login済みのときtracking_idをｾｯﾄする  
     const userName = req.user.username;
     const cookies = new Cookies(req, res);
     const trackingId = addTrackingCookie(cookies, userName);
+
+    // --- cookiesﾓｼﾞｭｰﾙを使わずにtrackingCookieを利用するﾃｽﾄ --- //
+    const trackingId_test = addTrackingCookie_test(req, res, userName);
+
     // ﾜﾝﾀｲﾑﾄｰｸﾝ作成
     var oneTimeToken = crypto.randomBytes(8).toString('hex');
     oneTimeTokenMap.set(userName, oneTimeToken);
-    console.info(
-      `閲覧されました: user: ${userName}, ` +
-      `trackingId: ${trackingId},` +
-      `remoteAddress: ${req.connection.remoteAddress} ` +
-      `oneTimeToken: ${oneTimeToken}`
-    );
+    console.info(`
+      閲覧されました: user: ${userName}, 
+      trackingId: ${trackingId},　
+      remoteAddress: ${req.connection.remoteAddress}　
+      oneTimeToken: ${oneTimeToken}
+    `);
   }
   // DBから情報を取得
   Post.findAll().then((posts) => {
+    posts.forEach((post) => {
+      post.formattedCreatedAt = moment(post.createdAt).tz('Asia/Tokyo').format('YYYY年MM月DD日 HH時mm分ss秒');
+    });
     res.render('index', {
-      title: 'Express', 
+      title: 'Express',
       user: req.user,
       posts: posts,
       oneTimeToken: oneTimeToken
@@ -38,51 +47,47 @@ router.get('/', function (req, res, next) {
   });
 });
 
-// ----- いろいろ変更中 ----- //
+// POST processing
 router.post('/', (req, res) => {
-  Post.create({
-    content: req.body.content,
-    trackingCookie: cookies.get(trackingIdKey),
-    postedBy: userName
-  }).then(() => {
-    console.info(`
-      投稿されました。
-      content: ${req.body.content}, 
-      trackingCookie: ${trackingId}, 
-      postedBy: ${userName} 
-      requestedOneTimeToken: ${requestedOneTimeToken}
-    `);
-    oneTimeTokenMap.delete(requestedUserName);
-    res.redirect('/post');
-  });
- });
-
-/** ----- 変更前 -----
-router.post('/', (req, res) => {
-  var requestedOneTimeToken = req.body.oneTimeToken;
-  var requestedUserName = req.user.username;
-  if (oneTimeTokenMap.get(requestedUserName) === requestedOneTimeToken) {
-    Post.create({
-      content: req.body.content,
-      trackingCookie: trackingId,
-      postedBy: userName
-    }).then(() => {
-      console.info(`
-        投稿されました。
-        content: ${req.body.content}, 
-        trackingCookie: ${trackingId}, 
-        postedBy: ${userName} 
-        requestedOneTimeToken: ${requestedOneTimeToken}
-      `);
-      oneTimeTokenMap.delete(requestedUserName);
-      res.redirect('/post');
-    });
+  if (req.user) {
+    const requestedOneTimeToken = req.body.oneTimeToken;
+    const requestedUserName = req.user.username;
+    const cookies = new Cookies(req, res);
+    if (oneTimeTokenMap.get(requestedUserName) === requestedOneTimeToken) {
+      // postﾘｸｴｽﾄしたﾕｰｻﾞとﾄｰｸﾝの組み合わせを検証する
+      Post.create({
+        content: req.body.content,
+        trackingCookie: cookies.get(trackingIdKey),
+        postedBy: requestedUserName
+      }).then(() => {
+        console.info(`
+          投稿されました。
+          content: ${req.body.content}, 
+          trackingCookie: ${cookies.get(trackingIdKey)}, 
+          postedBy: ${requestedUserName} 
+          requestedOneTimeToken: ${requestedOneTimeToken}
+        `);
+        oneTimeTokenMap.delete(requestedUserName);
+        res.redirect('/');
+      });
+    } else {
+      // oneTimeTokenが一致しない
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('未対応のリクエストです');
+    }
   } else {
-    res.end('Error');
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('loginしてください');
   }
- });
- */
- 
+});
+
+// ----- cookiesﾓｼﾞｭｰﾙを使わずにtracking_cookieを利用する ----- //
+function addTrackingCookie_test(req, res, userName) {
+  const requestedTrackingId = req.cookies.tracking_id;
+  console.log(`----- requestedTrackingId: ${requestedTrackingId} -----`);
+}
+
+
 // Cookieにtracking_idがない場合作成しセットする関数です
 function addTrackingCookie(cookies, userName) {
   const requestedTrackingId = cookies.get(trackingIdKey);
@@ -104,12 +109,9 @@ function isValidTrackingId(trackingId, userName) {
   if (!trackingId) {
     return false;
   }
-  // ｵﾘｼﾞﾅﾙIDとﾊｯｼｭ値を分離
-  const splitted = trackingId.split('_');
-  // ｵﾘｼﾞﾅﾙID
-  const originalId = splitted[0];
-  // ﾊｯｼｭ値
-  const requestedHash = splitted[1];
+  const splitted = trackingId.split('_'); // ｵﾘｼﾞﾅﾙIDとﾊｯｼｭ値を分離
+  const originalId = splitted[0]; // ｵﾘｼﾞﾅﾙID
+  const requestedHash = splitted[1]; // ﾊｯｼｭ値
   return createValidHash(originalId, userName) === requestedHash;
 }
 
