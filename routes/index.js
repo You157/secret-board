@@ -17,8 +17,8 @@ router.get('/', function (req, res, next) {
   if (req.user) {
     // login済みのときtracking_idをｾｯﾄする  
     const userName = req.user.username;
-    const cookies = new Cookies(req, res);
-    const trackingId = addTrackingCookie(cookies, userName);
+    // const cookies = new Cookies(req, res);
+    // const trackingId = addTrackingCookie(cookies, userName);
 
     // --- cookiesﾓｼﾞｭｰﾙを使わずにtrackingCookieを利用するﾃｽﾄ --- //
     const trackingId_test = addTrackingCookie_test(req, res, userName);
@@ -82,12 +82,29 @@ router.post('/', (req, res) => {
 });
 
 // ----- cookiesﾓｼﾞｭｰﾙを使わずにtracking_cookieを利用する ----- //
+// cookieにtracking_idをｾｯﾄして、console.log用にidをﾘﾀｰﾝする
 function addTrackingCookie_test(req, res, userName) {
+  // tracking_idというｷｰがcookieに存在するかﾁｪｯｸ
   const requestedTrackingId = req.cookies.tracking_id;
-  console.log(`----- requestedTrackingId: ${requestedTrackingId} -----`);
+  if (isValidTrackingId(requestedTrackingId, userName)) {
+    // trackingIdが存在する && IDとﾊｯｼｭ値が合致する場合
+    return requestedTrackingId;
+  }else{
+    // trackingIdが存在しない or 合致しない場合
+    var originalTrackingId = parseInt(crypto.randomBytes(8).toString('hex'), 16);
+    var trackingId = `${originalTrackingId}_${createValidHash(originalTrackingId, userName)}`;
+    // var tomorrow = new Date(Date.now() + (1000 * 60 * 60 * 24));
+    // cookies.set(trackingIdKey, trackingId, { expires: tomorrow });
+    // responseにcookieをｾｯﾄする
+    res.cookie(trackingIdKey, trackingId, {
+      // 有効期限1日
+      maxAge: 24*60*60*1000
+    });
+    return trackingId;
+  }
 }
 
-
+/**
 // Cookieにtracking_idがない場合作成しセットする関数です
 function addTrackingCookie(cookies, userName) {
   const requestedTrackingId = cookies.get(trackingIdKey);
@@ -103,6 +120,7 @@ function addTrackingCookie(cookies, userName) {
     return trackingId;
   }
 }
+ */
 
 // tracking_idの有無とﾊｯｼｭ値の成否を判定する
 function isValidTrackingId(trackingId, userName) {
