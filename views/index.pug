@@ -2,14 +2,13 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+  p ログインすると投稿できます。
   if user
     p Hello, #{user.username}
     a(href="/logout") Logout
   else
-    p Hello
+    p Hello, GUEST
     a(href="/auth/github") login
-  h1 秘密の匿名掲示板
   h2 新規投稿
   form(method="post" action="/")
     div
