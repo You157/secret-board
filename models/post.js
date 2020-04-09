@@ -3,7 +3,7 @@
 const Sequelize = require('sequelize');
 // データベースの設定
 const sequelize = new Sequelize(
-  'postgres://postgres:postgres@localhost/secret_board',
+  process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost/secret_board',
   {
     loggin: false,
     operatorsAliases: false
