@@ -12,8 +12,8 @@ var passport = require('passport');
 var session = require('express-session');
 var GitHubStrategy = require('passport-github2').Strategy;
 
-var GITHUB_GLIENT_ID = '26a121690a9f80f9ab24';
-var GITHUB_CLIENT_SECRET = '7e4ee954e84b95ce1d664707ad14a26e1aafa158';
+var GITHUB_GLIENT_ID = process.env.GITHUB_CLIENT_ID || '26a121690a9f80f9ab24';
+var GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '7e4ee954e84b95ce1d664707ad14a26e1aafa158';
 
 // Passport session setup.
 passport.serializeUser((user, done) => {
@@ -27,7 +27,7 @@ passport.deserializeUser((obj, done) => {
 passport.use(new GitHubStrategy({
   clientID: GITHUB_GLIENT_ID,
   clientSecret: GITHUB_CLIENT_SECRET,
-  callbackURL: "http://localhost:8000/auth/github/callback"
+  callbackURL: process.env.HEROKU_URL ? process.env.HEROKU_URL + 'auth/github/callback' : "http://localhost:8000/auth/github/callback"
 },
   (accessToken, refreshToken, profile, done) => {
     process.nextTick(() => {
