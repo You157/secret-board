@@ -22,6 +22,12 @@ block content
     // 改行を行えるように変換
     p.card-text(style="white-space:pre; overflow:auto;") #{post.content}
     p 投稿日時：#{post.formattedCreatedAt}
+    // 削除機能テスト
+    - var isDeletable = (user.username === post.postedBy)
+    if isDeletable
+      form(method="post" action="/?delete=1")
+        input(type="hidden" name="id" value=post.id)
+        button(type="submit") 削除
     hr
 
   
