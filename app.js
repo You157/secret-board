@@ -38,7 +38,7 @@ passport.use(new GitHubStrategy({
 
 // Router import
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var postsRouter = require('./routes/posts');
 
 var app = express();
 app.use(helmet());
@@ -59,18 +59,15 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // loginしていないpostﾘｸｴｽﾄは排除
-app.post('/', (req, res, next) => {
-  if (!req.user) {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('loginしてください');
-  } else {
-    next();
-  }
+app.post('/posts', (req, res, next) => {
+  if (req.user) { return next(); }
+  res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('loginしてください');
 });
 
 // Router setup
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/posts', postsRouter);
 
 // OAuth Route handler
 app.get('/auth/github',
@@ -80,14 +77,14 @@ app.get('/auth/github',
 app.get('/auth/github/callback',
   passport.authenticate('github', { failureRedirect: '/login' }),
   function (req, res) {
-    res.redirect('/');
+    res.redirect('/posts');
   });
 app.get('/login', function (req, res) {
   res.render('login');
 });
 app.get('/logout', function (req, res) {
   req.logout();
-  res.redirect('/');
+  res.redirect('/posts');
 });
 
 // catch 404 and forward to error handler
