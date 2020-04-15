@@ -1,0 +1,35 @@
+extends layout
+
+block content
+  h1= title
+  p ログインすると投稿できます。
+  if user
+    p Hello, #{user.username}
+    a(href="/logout") Logout
+  else
+    p Hello, GUEST
+    a(href="/auth/github") login
+  h2 新規投稿
+  form(method="post" action="/posts")
+    div
+      textarea(name="content" cols=40 rows=4)
+      input(type="hidden" name="oneTimeToken" value=oneTimeToken)
+    div: button(type="submit") 投稿
+  h2 投稿一覧
+  each post in posts
+    - var originalTrackingId = post.trackingCookie ? post.trackingCookie.split('_')[0] : ''
+    span #{post.id} : ID:#{originalTrackingId}
+    // 改行を行えるように変換
+    p.card-text(style="white-space:pre; overflow:auto;") #{post.content}
+    p 投稿日時：#{post.formattedCreatedAt}
+    // 削除機能テスト
+    - var isDeletable = false
+    if user
+      - isDeletable = (user.username === post.postedBy)
+    if isDeletable
+      form(method="post" action="/posts/delete")
+        input(type="hidden" name="id" value=post.id)
+        button(type="submit") 削除
+    hr
+
+  
