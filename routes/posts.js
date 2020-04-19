@@ -5,7 +5,8 @@ const crypto = require('crypto');　// ﾊｯｼｭ関数を利用するため�
 const oneTimeTokenMap = new Map();　// Key(ﾕｰｻﾞ名)：Value(ﾄｰｸﾝ)とした連想配列
 const moment = require('moment-timezone');　// Dateを見やすく編集するﾓｼﾞｭｰﾙ
 const trackingIdKey = 'tracking_id';　// cookieのｷｰ
-const secretKey = 'cd609e534e6e396261b09336f4a36fd673c5e819f527c7745a8eedfb2bfef366b13e93559cf6173e21721223039f076ee3e76cba5666a8d463c97d123dd75dadb0c40ee8b50af92d804f5c626fe232657f2262bc6a4e0778d44b8e4ea12a42f46ec52895e5d9bc21b2386278a934503b67b3f5becfc4ee562e0966c0213cbc34f7e62aa9ed575f1f2faf43e86e3381f086bf3d19d7840e3f4ab8aafa19436a80f161d841b51fcc74f75d1cf4cb97cc0ff0fb655c990aceeab4f632634342cec3d7b58702a3f94fbff0b18b1fed424e15c9db09f45e24f2cd9b7398362456d3b9dc5bdf107be528e0a93a0d6d5d8cd250fe047f6326631d61479e1155018f984d';
+// const SECRET_KEY = 'mzD6wGb9LQPB6sMMuw88nWQY';
+const SECRET_KEY = process.env.SECRET_KEY;
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -115,7 +116,7 @@ function isValidTrackingId(trackingId, userName) {
 // IDとreq.userからﾊｯｼｭを作成しﾘﾀｰﾝする
 function createValidHash(originalId, userName) {
   const sha1sum = crypto.createHash('sha1');
-  sha1sum.update(String(originalId) + userName + secretKey);
+  sha1sum.update(String(originalId) + userName + SECRET_KEY);
   return sha1sum.digest('hex');
 }
 
