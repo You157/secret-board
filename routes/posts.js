@@ -5,8 +5,7 @@ const crypto = require('crypto');　// ﾊｯｼｭ関数を利用するため�
 const oneTimeTokenMap = new Map();　// Key(ﾕｰｻﾞ名)：Value(ﾄｰｸﾝ)とした連想配列
 const moment = require('moment-timezone');　// Dateを見やすく編集するﾓｼﾞｭｰﾙ
 const trackingIdKey = 'tracking_id';　// cookieのｷｰ
-// const SECRET_KEY = 'mzD6wGb9LQPB6sMMuw88nWQY';
-const SECRET_KEY = process.env.SECRET_KEY;
+const SECRET_KEY = process.env.SECRET_KEY; 
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
